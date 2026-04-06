@@ -1,0 +1,18 @@
+{
+  "name": "paprika-data-rescue",
+  "version": "0.1.0",
+  "description": "MVP for Paprika Recipe Manager data migration",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest",
+    "parse": "node src/cli.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "license": "MIT"
+}
