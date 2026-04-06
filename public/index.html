@@ -11,22 +11,18 @@
     header { background: #c0392b; color: white; padding: 20px; border-radius: 8px; margin-bottom: 24px; }
     header h1 { font-size: 1.5rem; margin-bottom: 4px; }
     header p { opacity: 0.9; font-size: 0.9rem; }
-
     .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
     .btn { background: #c0392b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
     .btn:hover { background: #a93226; }
     .btn-outline { background: white; color: #c0392b; border: 1.5px solid #c0392b; }
     .btn-outline:hover { background: #fdf2f2; }
-
+    .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
     input[type="file"] { display: none; }
     label.btn { display: inline-block; }
-
     .search-box { flex: 1; min-width: 200px; }
     .search-box input { width: 100%; padding: 8px 12px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
-
     .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
     @media (max-width: 640px) { .layout { grid-template-columns: 1fr; } }
-
     .recipe-list { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); max-height: 70vh; overflow-y: auto; }
     .recipe-list h3 { font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding: 0 4px; }
     .recipe-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; transition: background 0.15s; }
@@ -37,26 +33,23 @@
     .recipe-item-sub { font-size: 0.8rem; color: #888; margin-top: 2px; }
     .stars { color: #f39c12; letter-spacing: -1px; }
     .recipe-item.active .stars { color: #ffd700; }
-
     .detail-panel { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .detail-empty { color: #aaa; text-align: center; padding: 60px 20px; }
     .detail-empty p { margin-top: 8px; font-size: 0.9rem; }
     .detail-header { border-bottom: 1px solid #eee; padding-bottom: 16px; margin-bottom: 16px; }
-    .detail-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; }
+    .detail-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .detail-meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: #666; }
     .detail-meta span { display: flex; align-items: center; gap: 4px; }
     .detail-section { margin-bottom: 20px; }
     .detail-section h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
     .detail-section p, .detail-section pre { white-space: pre-wrap; font-size: 0.95rem; line-height: 1.7; }
     .detail-description { color: #555; font-style: italic; margin-bottom: 16px; }
-    .categories { display: flex; gap: 6px; flex-wrap: wrap; }
+    .categories { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
     .category-tag { background: #fdf2f2; color: #c0392b; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; }
     .detail-notes { background: #fff9e6; border-left: 3px solid #f39c12; padding: 12px; border-radius: 0 6px 6px 0; font-size: 0.9rem; }
-
     .upload-result { margin-top: 12px; padding: 12px; border-radius: 6px; font-size: 0.85rem; }
     .upload-result.success { background: #d4edda; color: #155724; }
     .upload-result.error { background: #f8d7da; color: #721c24; }
-
     .loading { color: #888; font-size: 0.9rem; text-align: center; padding: 40px; }
     .error-msg { background: #f8d7da; color: #721c24; padding: 12px; border-radius: 6px; font-size: 0.9rem; }
   </style>
@@ -82,9 +75,7 @@
   <div class="layout">
     <div class="recipe-list">
       <h3>Recipes (<span id="recipeCount">0</span>)</h3>
-      <div id="recipeItems">
-        <div class="loading">Loading...</div>
-      </div>
+      <div id="recipeItems"><div class="loading">Loading...</div></div>
     </div>
 
     <div class="detail-panel">
@@ -104,8 +95,7 @@ let allRecipes = [];
 
 function makeStars(rating) {
   if (!rating) return '';
-  const full = Math.round(rating);
-  return '★'.repeat(full) + '☆'.repeat(5 - full);
+  return '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
 }
 
 async function loadRecipes() {
@@ -129,20 +119,15 @@ function renderRecipeList(recipes) {
     return;
   }
   el.innerHTML = recipes.map(r => `
-    <div class="recipe-item" onclick="showDetail('${encodeURIComponent(r.name)}')">
+    <div class="recipe-item" data-name="${encodeURIComponent(r.name)}" onclick="showDetail('${encodeURIComponent(r.name)}')">
       <div class="recipe-item-name">${r.name}</div>
-      <div class="recipe-item-sub">
-        <span class="stars">${makeStars(r.rating)}</span> · ${r.source || 'Unknown'}
-      </div>
+      <div class="recipe-item-sub"><span class="stars">${makeStars(r.rating)}</span> · ${r.source || 'Unknown'}</div>
       <div class="recipe-item-sub">${(r.categories || []).slice(0,2).join(', ')}</div>
     </div>
   `).join('');
 }
 
-let currentDetailName = null;
-
 async function showDetail(name) {
-  currentDetailName = name;
   const el = document.getElementById('detailContent');
   el.innerHTML = '<div class="loading">Loading recipe...</div>';
   try {
@@ -150,11 +135,8 @@ async function showDetail(name) {
     if (!res.ok) throw new Error('Recipe not found');
     const r = await res.json();
     renderDetail(r);
-    // Highlight active
-    document.querySelectorAll('.recipe-item').forEach(el => {
-      el.classList.remove('active');
-    });
-    event.currentTarget.classList.add('active');
+    document.querySelectorAll('.recipe-item').forEach(el => el.classList.remove('active'));
+    document.querySelector(`.recipe-item[data-name="${name}"]`).classList.add('active');
   } catch (err) {
     el.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
   }
@@ -164,22 +146,24 @@ function renderDetail(r) {
   const el = document.getElementById('detailContent');
   el.innerHTML = `
     <div class="detail-header">
-      <div class="detail-title">${r.name}</div>
+      <div class="detail-title">
+        ${r.name}
+        <button class="btn btn-sm" onclick="exportRecipe('${encodeURIComponent(r.name)}')" title="Download as .paprikarecipes">📤 Export</button>
+      </div>
       <div class="detail-meta">
         <span>⭐ ${makeStars(r.rating)}</span>
         <span>👤 ${r.servings || '?'} servings</span>
         ${r.prep_time ? `<span>⏱️ Prep: ${r.prep_time}</span>` : ''}
         ${r.cook_time ? `<span>🔥 Cook: ${r.cook_time}</span>` : ''}
-        <span>📊 ${r.difficulty || 'Unknown difficulty'}</span>
+        <span>📊 ${r.difficulty || 'Unknown'}</span>
       </div>
       ${r.categories && r.categories.length ? `
-        <div class="categories" style="margin-top:10px">
+        <div class="categories">
           ${r.categories.map(c => `<span class="category-tag">${c}</span>`).join('')}
-        </div>
-      ` : ''}
+        </div>` : ''}
     </div>
     ${r.description ? `<div class="detail-description">${r.description}</div>` : ''}
-    ${r.source ? `<div class="detail-section"><h4>Source</h4><p>${r.source}${r.source_url ? ` — <a href="${r.source_url}" target="_blank">${r.source_url}</a>` : ''}</p></div>` : ''}
+    ${r.source ? `<div class="detail-section"><h4>Source</h4><p>${r.source}${r.source_url ? `<br><a href="${r.source_url}" target="_blank">${r.source_url}</a>` : ''}</p></div>` : ''}
     ${r.ingredients ? `<div class="detail-section"><h4>Ingredients</h4><pre>${r.ingredients}</pre></div>` : ''}
     ${r.directions ? `<div class="detail-section"><h4>Directions</h4><pre>${r.directions}</pre></div>` : ''}
     ${r.notes ? `<div class="detail-section"><h4>Notes</h4><div class="detail-notes">${r.notes}</div></div>` : ''}
@@ -187,22 +171,20 @@ function renderDetail(r) {
   `;
 }
 
-// Search
+function exportRecipe(name) {
+  window.location.href = `/api/export/${encodeURIComponent(name)}`;
+}
+
 document.getElementById('searchInput').addEventListener('input', function() {
   const q = this.value.toLowerCase().trim();
-  if (!q) {
-    renderRecipeList(allRecipes);
-    return;
-  }
-  const filtered = allRecipes.filter(r =>
-    (r.name || '').toLowerCase().includes(q) ||
-    (r.source || '').toLowerCase().includes(q) ||
-    (r.categories || []).some(c => c.toLowerCase().includes(q))
-  );
-  renderRecipeList(filtered);
+  if (!q) { renderRecipeList(allRecipes); return; }
+  renderRecipeList(allRecipes.filter(r =>
+    (r.name||'').toLowerCase().includes(q) ||
+    (r.source||'').toLowerCase().includes(q) ||
+    (r.categories||[]).some(c => c.toLowerCase().includes(q))
+  ));
 });
 
-// File upload
 document.getElementById('fileInput').addEventListener('change', async function() {
   const file = this.files[0];
   if (!file) return;
@@ -217,18 +199,14 @@ document.getElementById('fileInput').addEventListener('change', async function()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Parse failed');
-    resultEl.innerHTML = `<div class="upload-result success">✅ Parsed: <strong>${data.recipe.name}</strong> (${file.name})</div>`;
-    showDetail(data.recipe.name).then(() => {
-      // Re-load full list to include new recipe if applicable
-      loadRecipes();
-    });
+    resultEl.innerHTML = `<div class="upload-result success">✅ Parsed: <strong>${data.recipe.name}</strong></div>`;
+    loadRecipes();
   } catch (err) {
-    resultEl.innerHTML = `<div class="upload-result error">❌ Error: ${err.message}</div>`;
+    resultEl.innerHTML = `<div class="upload-result error">❌ ${err.message}</div>`;
   }
   this.value = '';
 });
 
-// Load on start
 loadRecipes();
 </script>
 </body>
