@@ -133,7 +133,7 @@ function exportRecipe(recipe) {
   };
 
   add('name', recipe.name);
-  add('servings', recipe.servings ? `${recipe.servings} servings` : '');
+  add('servings', typeof recipe.servings === 'number' ? String(recipe.servings) : recipe.servings ? String(recipe.servings).replace(/\s*servings?\s*/i, '') : '');
   add('source', recipe.source);
   add('source_url', recipe.source_url);
   add('prep_time', recipe.prep_time);
@@ -142,7 +142,7 @@ function exportRecipe(recipe) {
   if (recipe.rating !== undefined) add('rating', recipe.rating);
   if (recipe.on_favorites) add('on_favorites', 'yes');
   if (recipe.categories && recipe.categories.length) {
-    add('categories', `[${recipe.categories.join(', ')}]`);
+    add('categories', `[${recipe.categories.join(',')}]`);
   }
   add('nutritional_info', recipe.nutritional_info);
   addML('description', recipe.description);
