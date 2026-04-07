@@ -77,6 +77,46 @@ app.post('/api/recipes/parse', async (req, res) => {
   }
 });
 
+// POST /api/recipes/batch-parse — parse multiple .paprikarecipes files at once
+app.post('/api/recipes/batch-parse', async (req, res) => {
+  try {
+    const { files } = req.body;
+    if (!Array.isArray(files)) {
+      return res.status(400).json({ error: 'files must be an array of {content, filename} objects' });
+    }
+    const { parseRecipeContent } = require('./parser');
+    const results = files.map(({ content, filename }) => {
+      try {
+        const recipe = parseRecipeContent(content);
+        return { ok: true, recipe, filename };
+      } catch (err) {
+        return { ok: false, filename, error: err.message };
+      }
+    });
+    const ok = results.filter(r => r.ok);
+    const failed = results.filter(r => !r.ok);
+    res.json({ total: files.length, successful: ok.length, failed: failed.length, results });
+  } catch (err) {
+    res.status(500).json({ error: `Batch parse error: ${err.message}` });
+  }
+});
+
+// GET /api/export/all — export all recipes as single combined .paprikarecipes file
+app.get('/api/export/all', async (req, res) => {
+  try {
+    const recipes = await parseRecipeDirectory(RECIPES_DIR);
+    if (!recipes.length) {
+      return res.status(404).json({ error: 'No recipes to export' });
+    }
+    const combined = recipes.map(r => exportRecipe(r)).join('\n\n' + '='.repeat(50) + '\n\n');
+    res.type('text/plain');
+    res.attachment(`paprika-export-${Date.now()}.paprikarecipes`);
+    res.send(combined);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * Export a recipe object to .paprikarecipes text format
  */
