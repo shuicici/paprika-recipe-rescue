@@ -29,6 +29,8 @@
     .cat-btn { background: white; border: 1px solid #ddd; padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; color: #666; }
     .cat-btn:hover { border-color: #c0392b; color: #c0392b; }
     .cat-btn.active { background: #c0392b; color: white; border-color: #c0392b; }
+    .scaler { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 0.85rem; }
+    .scaler input { width: 50px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
     .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
     @media (max-width: 640px) { .layout { grid-template-columns: 1fr; } }
     .recipe-list { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); max-height: 70vh; overflow-y: auto; }
@@ -107,6 +109,8 @@
 const API_BASE = '/api/recipes';
 let allRecipes = [];
 let activeCategory = 'All';
+let currentRecipe = null;
+let currentServings = null;
 
 function makeStars(rating) {
   if (!rating) return '';
@@ -190,7 +194,55 @@ async function showDetail(name) {
   }
 }
 
+function scaleIngredient(line, originalServings, newServings) {
+  if (!originalServings || !newServings || originalServings === newServings) return line;
+  const ratio = newServings / originalServings;
+  // Match fractions like 1/2, 1/4, 3/4, 1/3, 2/3, 1/8 etc and numbers
+  return line.replace(/([\d]+)\s*\/\s*([\d]+)/g, (_, n, d) => {
+    const scaled = (parseFloat(n) / parseFloat(d) * ratio);
+    // Try to express as nice fraction
+    const simplified = simplifyFraction(scaled);
+    return simplified;
+  }).replace(/\b([\d]+(?:\.[\d]+)?)\b/g, (match, num) => {
+    const n = parseFloat(num);
+    if (isNaN(n)) return match;
+    const scaled = n * ratio;
+    return scaled < 10 ? scaled.toFixed(1).replace(/\.0$/,'') : Math.round(scaled).toString();
+  });
+}
+
+function simplifyFraction(value) {
+  if (value === 0.25) return '¼';
+  if (value === 0.5) return '½';
+  if (value === 0.75) return '¾';
+  if (value === 0.333) return '⅓';
+  if (value === 0.667) return '⅔';
+  if (value === 0.125) return '⅛';
+  if (value === 0.25 * 2) return '½';
+  if (value === 0.125 * 3) return '⅜';
+  if (value === 0.125 * 5) return '⅝';
+  if (value === 0.125 * 7) return '⅞';
+  if (Number.isInteger(value)) return value.toString();
+  const whole = Math.floor(value);
+  const frac = value - whole;
+  if (frac < 0.1) return Math.round(value).toString();
+  if (Math.abs(frac - 0.5) < 0.05) return whole ? `${whole}½` : '½';
+  if (Math.abs(frac - 0.25) < 0.05) return whole ? `${whole}¼` : '¼';
+  if (Math.abs(frac - 0.75) < 0.05) return whole ? `${whole}¾` : '¾';
+  return value.toFixed(1).replace(/\.0$/, '');
+}
+
 function renderDetail(r) {
+  currentRecipe = r;
+  const originalServings = typeof r.servings === 'number' ? r.servings : parseFloat(String(r.servings || '').match(/[\d.]+/)?.[0]) || 2;
+  currentServings = originalServings;
+  updateDetailWithServings();
+}
+
+function updateDetailWithServings() {
+  const r = currentRecipe;
+  if (!r) return;
+  const scaledIngredients = (r.ingredients || '').split('\n').map(l => scaleIngredient(l, typeof r.servings === 'number' ? r.servings : parseFloat(String(r.servings || '').match(/[\d.]+/)?.[0]) || 2, currentServings)).join('\n');
   const el = document.getElementById('detailContent');
   el.innerHTML = `
     <div class="detail-header">
@@ -200,7 +252,7 @@ function renderDetail(r) {
       </div>
       <div class="detail-meta">
         <span>⭐ ${makeStars(r.rating)}</span>
-        <span>👤 ${r.servings || '?'} servings</span>
+        <span>👤 <span id="servingsDisplay">${currentServings}</span> servings</span>
         ${r.prep_time ? `<span>⏱️ Prep: ${r.prep_time}</span>` : ''}
         ${r.cook_time ? `<span>🔥 Cook: ${r.cook_time}</span>` : ''}
         <span>📊 ${r.difficulty || 'Unknown'}</span>
@@ -209,14 +261,36 @@ function renderDetail(r) {
         <div class="categories">
           ${r.categories.map(c => `<span class="category-tag">${c}</span>`).join('')}
         </div>` : ''}
+      <div class="scaler">
+        <span>Scaler:</span>
+        <button class="btn btn-sm" onclick="changeServings(-1)">−</button>
+        <input type="number" id="servingsInput" value="${currentServings}" min="1" max="100" onchange="setServings(this.value)" />
+        <button class="btn btn-sm" onclick="changeServings(1)">+</button>
+        <button class="btn btn-sm" onclick="resetServings()" style="font-size:0.7rem;padding:2px 6px">Reset</button>
+      </div>
     </div>
     ${r.description ? `<div class="detail-description">${r.description}</div>` : ''}
     ${r.source ? `<div class="detail-section"><h4>Source</h4><p>${r.source}${r.source_url ? `<br><a href="${r.source_url}" target="_blank">${r.source_url}</a>` : ''}</p></div>` : ''}
-    ${r.ingredients ? `<div class="detail-section"><h4>Ingredients</h4><pre>${r.ingredients}</pre></div>` : ''}
+    ${r.ingredients ? `<div class="detail-section"><h4>Ingredients</h4><pre>${scaledIngredients}</pre></div>` : ''}
     ${r.directions ? `<div class="detail-section"><h4>Directions</h4><pre>${r.directions}</pre></div>` : ''}
     ${r.notes ? `<div class="detail-section"><h4>Notes</h4><div class="detail-notes">${r.notes}</div></div>` : ''}
     ${r.nutritional_info ? `<div class="detail-section"><h4>Nutrition</h4><p>${r.nutritional_info}</p></div>` : ''}
   `;
+}
+
+function changeServings(delta) {
+  currentServings = Math.max(1, currentServings + delta);
+  updateDetailWithServings();
+}
+
+function setServings(val) {
+  currentServings = Math.max(1, parseInt(val, 10) || 1);
+  updateDetailWithServings();
+}
+
+function resetServings() {
+  currentServings = typeof currentRecipe.servings === 'number' ? currentRecipe.servings : parseFloat(String(currentRecipe.servings || '').match(/[\d.]+/)?.[0]) || 2;
+  updateDetailWithServings();
 }
 
 function exportRecipe(name) {
