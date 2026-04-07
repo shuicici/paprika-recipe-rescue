@@ -49,7 +49,9 @@ npm start
 | GET | `/api/recipes` | List all recipes |
 | GET | `/api/recipes/:name` | Get single recipe by name |
 | GET | `/api/export/:name` | Download recipe as `.paprikarecipes` |
+| GET | `/api/export/all` | Download all recipes as single combined `.paprikarecipes` |
 | POST | `/api/recipes/parse` | Parse uploaded `.paprikarecipes` |
+| POST | `/api/recipes/batch-parse` | Batch-parse multiple `.paprikarecipes` files |
 
 ## CLI
 
