@@ -75,6 +75,7 @@
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="Search recipes..." />
     </div>
+    <button class="btn btn-outline" onclick="exportAllRecipes()" title="Download all recipes">📥 Export All</button>
     <label class="btn btn-outline" for="fileInput">📤 Import</label>
     <input type="file" id="fileInput" accept=".paprikarecipes" multiple />
     <button class="btn" onclick="loadRecipes()">🔄 Refresh</button>
@@ -295,6 +296,10 @@ function resetServings() {
 
 function exportRecipe(name) {
   window.location.href = `/api/export/${encodeURIComponent(name)}`;
+}
+
+function exportAllRecipes() {
+  window.location.href = '/api/export/all';
 }
 
 document.getElementById('searchInput').addEventListener('input', applyFilters);
