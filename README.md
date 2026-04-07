@@ -53,6 +53,7 @@ npm start
 | POST | `/api/recipes/parse` | Parse uploaded `.paprikarecipes` |
 | POST | `/api/recipes/batch-parse` | Batch-parse multiple `.paprikarecipes` files |
 | POST | `/api/convert/mealmaster` | Convert MealMaster MX2 format → `.paprikarecipes` |
+| POST | `/api/convert/json` | Convert generic JSON recipe → `.paprikarecipes` |
 
 ## CLI
 
@@ -80,13 +81,20 @@ The `.paprikarecipes` format was reverse-engineered from the [cookbook-importer]
 paprika-mvp/
 ├── recipes/              # Sample .paprikarecipes files
 ├── src/
-│   ├── parser.js          # Core parser (YAML-like → JSON)
+│   ├── parser.js         # Core parser (YAML-like → JSON)
 │   ├── server.js         # Express API server
-│   └── cli.js            # Command-line tool
+│   ├── cli.js            # Command-line tool
+│   └── formats/
+│       ├── mealmaster.js  # MealMaster MX2 → Paprika converter
+│       └── json.js       # Generic JSON → Paprika converter
 ├── public/
 │   └── index.html        # Recipe web UI
 ├── test/
-│   └── parser.test.js    # Jest tests (6 passing)
+│   ├── parser.test.js    # Core parser tests (6 passing)
+│   ├── mealmaster.test.js # MealMaster tests (3 passing)
+│   └── json.test.js      # JSON parser tests (4 passing)
+├── Dockerfile
+├── docker-compose.yml
 ├── package.json
 └── README.md
 ```
