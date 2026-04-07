@@ -102,6 +102,21 @@ app.post('/api/recipes/batch-parse', async (req, res) => {
 });
 
 // GET /api/export/all — export all recipes as single combined .paprikarecipes file
+// POST /api/convert/mealmaster — convert MealMaster MX2 to Paprika .paprikarecipes format
+app.post('/api/convert/mealmaster', async (req, res) => {
+  try {
+    const { content, filename } = req.body;
+    if (!content) {
+      return res.status(400).json({ error: 'Missing content field in request body' });
+    }
+    const { mealmasterToPaprika } = require('./formats/mealmaster');
+    const paprika = mealmasterToPaprika(content);
+    res.json({ paprika, filename: filename || 'converted.paprikarecipes' });
+  } catch (err) {
+    res.status(500).json({ error: `MealMaster conversion error: ${err.message}` });
+  }
+});
+
 app.get('/api/export/all', async (req, res) => {
   try {
     const recipes = await parseRecipeDirectory(RECIPES_DIR);
