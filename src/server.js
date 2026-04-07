@@ -117,6 +117,21 @@ app.post('/api/convert/mealmaster', async (req, res) => {
   }
 });
 
+// POST /api/convert/json — convert generic JSON recipe → .paprikarecipes format
+app.post('/api/convert/json', async (req, res) => {
+  try {
+    const { content, recipe } = req.body;
+    if (!content && !recipe) {
+      return res.status(400).json({ error: 'Missing content or recipe field' });
+    }
+    const { jsonToPaprika } = require('./formats/json');
+    const paprika = jsonToPaprika(content || recipe);
+    res.json({ paprika });
+  } catch (err) {
+    res.status(500).json({ error: `JSON conversion error: ${err.message}` });
+  }
+});
+
 app.get('/api/export/all', async (req, res) => {
   try {
     const recipes = await parseRecipeDirectory(RECIPES_DIR);
