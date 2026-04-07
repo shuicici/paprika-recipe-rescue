@@ -18,23 +18,17 @@
     .btn-outline:hover { background: #fdf2f2; }
     .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
     input[type="file"] { display: none; }
-    .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 12px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
-    .drop-zone.drag-over { border-color: #c0392b; background: #fdf2f2; }
-    .drop-zone:hover { border-color: #c0392b; }
-    .drop-zone p { margin: 4px 0 0; font-size: 0.8rem; color: #888; }
     label.btn { display: inline-block; }
     .search-box { flex: 1; min-width: 200px; }
     .search-box input { width: 100%; padding: 8px 12px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
-    #categoryFilter { display: flex; gap: 4px; flex-wrap: wrap; }
-    .cat-btn { background: white; border: 1px solid #ddd; padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; color: #666; }
-    .cat-btn:hover { border-color: #c0392b; color: #c0392b; }
-    .cat-btn.active { background: #c0392b; color: white; border-color: #c0392b; }
-    .scaler { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 0.85rem; }
-    .scaler input { width: 50px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
     .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
     @media (max-width: 640px) { .layout { grid-template-columns: 1fr; } }
     .recipe-list { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); max-height: 70vh; overflow-y: auto; }
     .recipe-list h3 { font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding: 0 4px; }
+    #categoryFilter { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+    .cat-btn { background: white; border: 1px solid #ddd; padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; color: #666; }
+    .cat-btn:hover { border-color: #c0392b; color: #c0392b; }
+    .cat-btn.active { background: #c0392b; color: white; border-color: #c0392b; }
     .recipe-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; transition: background 0.15s; }
     .recipe-item:hover { background: #fdf2f2; }
     .recipe-item.active { background: #c0392b; color: white; }
@@ -57,11 +51,27 @@
     .categories { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
     .category-tag { background: #fdf2f2; color: #c0392b; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; }
     .detail-notes { background: #fff9e6; border-left: 3px solid #f39c12; padding: 12px; border-radius: 0 6px 6px 0; font-size: 0.9rem; }
+    .scaler { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 0.85rem; }
+    .scaler input { width: 50px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
     .upload-result { margin-top: 12px; padding: 12px; border-radius: 6px; font-size: 0.85rem; }
     .upload-result.success { background: #d4edda; color: #155724; }
     .upload-result.error { background: #f8d7da; color: #721c24; }
     .loading { color: #888; font-size: 0.9rem; text-align: center; padding: 40px; }
     .error-msg { background: #f8d7da; color: #721c24; padding: 12px; border-radius: 6px; font-size: 0.9rem; }
+    .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 12px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+    .drop-zone.drag-over { border-color: #c0392b; background: #fdf2f2; }
+    .drop-zone:hover { border-color: #c0392b; }
+    .drop-zone p { margin: 4px 0 0; font-size: 0.8rem; color: #888; }
+    @media print {
+      body { background: white; }
+      .toolbar, .recipe-list, .drop-zone, .upload-result, .btn, .scaler, header { display: none !important; }
+      .container { max-width: 100%; padding: 0; }
+      .detail-panel { box-shadow: none; border: none; padding: 20px; }
+      .detail-section pre { white-space: pre-wrap; }
+      .detail-title { font-size: 1.8rem; }
+      .detail-header { border-bottom: 2px solid #333; }
+      .detail-section h4 { border-bottom: 1px solid #ccc; }
+    }
   </style>
 </head>
 <body>
@@ -91,7 +101,7 @@
   <div class="layout">
     <div class="recipe-list">
       <h3>Recipes (<span id="recipeCount">0</span>)</h3>
-      <div id="categoryFilter" style="margin-bottom:8px"></div>
+      <div id="categoryFilter"></div>
       <div id="recipeItems"><div class="loading">Loading...</div></div>
     </div>
 
@@ -195,23 +205,6 @@ async function showDetail(name) {
   }
 }
 
-function scaleIngredient(line, originalServings, newServings) {
-  if (!originalServings || !newServings || originalServings === newServings) return line;
-  const ratio = newServings / originalServings;
-  // Match fractions like 1/2, 1/4, 3/4, 1/3, 2/3, 1/8 etc and numbers
-  return line.replace(/([\d]+)\s*\/\s*([\d]+)/g, (_, n, d) => {
-    const scaled = (parseFloat(n) / parseFloat(d) * ratio);
-    // Try to express as nice fraction
-    const simplified = simplifyFraction(scaled);
-    return simplified;
-  }).replace(/\b([\d]+(?:\.[\d]+)?)\b/g, (match, num) => {
-    const n = parseFloat(num);
-    if (isNaN(n)) return match;
-    const scaled = n * ratio;
-    return scaled < 10 ? scaled.toFixed(1).replace(/\.0$/,'') : Math.round(scaled).toString();
-  });
-}
-
 function simplifyFraction(value) {
   if (value === 0.25) return '¼';
   if (value === 0.5) return '½';
@@ -219,10 +212,6 @@ function simplifyFraction(value) {
   if (value === 0.333) return '⅓';
   if (value === 0.667) return '⅔';
   if (value === 0.125) return '⅛';
-  if (value === 0.25 * 2) return '½';
-  if (value === 0.125 * 3) return '⅜';
-  if (value === 0.125 * 5) return '⅝';
-  if (value === 0.125 * 7) return '⅞';
   if (Number.isInteger(value)) return value.toString();
   const whole = Math.floor(value);
   const frac = value - whole;
@@ -233,23 +222,37 @@ function simplifyFraction(value) {
   return value.toFixed(1).replace(/\.0$/, '');
 }
 
+function scaleIngredient(line, originalServings, newServings) {
+  if (!originalServings || !newServings || originalServings === newServings) return line;
+  const ratio = newServings / originalServings;
+  return line
+    .replace(/([\d]+)\s*\/\s*([\d]+)/g, (_, n, d) => simplifyFraction(parseFloat(n) / parseFloat(d) * ratio))
+    .replace(/\b([\d]+(?:\.[\d]+)?)\b/g, (match, num) => {
+      const n = parseFloat(num);
+      if (isNaN(n)) return match;
+      const scaled = n * ratio;
+      return scaled < 10 ? scaled.toFixed(1).replace(/\.0$/,'') : Math.round(scaled).toString();
+    });
+}
+
 function renderDetail(r) {
   currentRecipe = r;
-  const originalServings = typeof r.servings === 'number' ? r.servings : parseFloat(String(r.servings || '').match(/[\d.]+/)?.[0]) || 2;
-  currentServings = originalServings;
+  currentServings = typeof r.servings === 'number' ? r.servings : (parseFloat(String(r.servings || '').match(/[\d.]+/)?.[0]) || 2;
   updateDetailWithServings();
 }
 
 function updateDetailWithServings() {
   const r = currentRecipe;
   if (!r) return;
-  const scaledIngredients = (r.ingredients || '').split('\n').map(l => scaleIngredient(l, typeof r.servings === 'number' ? r.servings : parseFloat(String(r.servings || '').match(/[\d.]+/)?.[0]) || 2, currentServings)).join('\n');
+  const origServings = typeof r.servings === 'number' ? r.servings : (parseFloat(String(r.servings || '').match(/[\d.]+/)?.[0]) || 2;
+  const scaled = (r.ingredients || '').split('\n').map(l => scaleIngredient(l, origServings, currentServings)).join('\n');
   const el = document.getElementById('detailContent');
   el.innerHTML = `
     <div class="detail-header">
       <div class="detail-title">
         ${r.name}
         <button class="btn btn-sm" onclick="exportRecipe('${encodeURIComponent(r.name)}')" title="Download as .paprikarecipes">📤 Export</button>
+        <button class="btn btn-sm" onclick="window.print()">🖨️ Print</button>
       </div>
       <div class="detail-meta">
         <span>⭐ ${makeStars(r.rating)}</span>
@@ -258,12 +261,9 @@ function updateDetailWithServings() {
         ${r.cook_time ? `<span>🔥 Cook: ${r.cook_time}</span>` : ''}
         <span>📊 ${r.difficulty || 'Unknown'}</span>
       </div>
-      ${r.categories && r.categories.length ? `
-        <div class="categories">
-          ${r.categories.map(c => `<span class="category-tag">${c}</span>`).join('')}
-        </div>` : ''}
+      ${r.categories && r.categories.length ? `<div class="categories">${r.categories.map(c => `<span class="category-tag">${c}</span>`).join('')}</div>` : ''}
       <div class="scaler">
-        <span>Scaler:</span>
+        <span>Servings:</span>
         <button class="btn btn-sm" onclick="changeServings(-1)">−</button>
         <input type="number" id="servingsInput" value="${currentServings}" min="1" max="100" onchange="setServings(this.value)" />
         <button class="btn btn-sm" onclick="changeServings(1)">+</button>
@@ -272,7 +272,7 @@ function updateDetailWithServings() {
     </div>
     ${r.description ? `<div class="detail-description">${r.description}</div>` : ''}
     ${r.source ? `<div class="detail-section"><h4>Source</h4><p>${r.source}${r.source_url ? `<br><a href="${r.source_url}" target="_blank">${r.source_url}</a>` : ''}</p></div>` : ''}
-    ${r.ingredients ? `<div class="detail-section"><h4>Ingredients</h4><pre>${scaledIngredients}</pre></div>` : ''}
+    ${r.ingredients ? `<div class="detail-section"><h4>Ingredients</h4><pre>${scaled}</pre></div>` : ''}
     ${r.directions ? `<div class="detail-section"><h4>Directions</h4><pre>${r.directions}</pre></div>` : ''}
     ${r.notes ? `<div class="detail-section"><h4>Notes</h4><div class="detail-notes">${r.notes}</div></div>` : ''}
     ${r.nutritional_info ? `<div class="detail-section"><h4>Nutrition</h4><p>${r.nutritional_info}</p></div>` : ''}
@@ -290,7 +290,7 @@ function setServings(val) {
 }
 
 function resetServings() {
-  currentServings = typeof currentRecipe.servings === 'number' ? currentRecipe.servings : parseFloat(String(currentRecipe.servings || '').match(/[\d.]+/)?.[0]) || 2;
+  currentServings = typeof currentRecipe.servings === 'number' ? currentRecipe.servings : (parseFloat(String(currentRecipe.servings || '').match(/[\d.]+/)?.[0]) || 2;
   updateDetailWithServings();
 }
 
@@ -309,7 +309,6 @@ document.getElementById('fileInput').addEventListener('change', async function()
   if (!files.length) return;
   const resultEl = document.getElementById('uploadResult');
   if (files.length === 1) {
-    // Single file upload
     resultEl.innerHTML = '<div class="upload-result">Parsing...</div>';
     try {
       const content = await files[0].text();
@@ -326,13 +325,9 @@ document.getElementById('fileInput').addEventListener('change', async function()
       resultEl.innerHTML = `<div class="upload-result error">❌ ${err.message}</div>`;
     }
   } else {
-    // Batch upload
     resultEl.innerHTML = `<div class="upload-result">Parsing ${files.length} files...</div>`;
     try {
-      const fileData = await Promise.all(files.map(async f => ({
-        content: await f.text(),
-        filename: f.name
-      })));
+      const fileData = await Promise.all(files.map(async f => ({ content: await f.text(), filename: f.name })));
       const res = await fetch('/api/recipes/batch-parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -349,7 +344,6 @@ document.getElementById('fileInput').addEventListener('change', async function()
   this.value = '';
 });
 
-// Drag and drop
 const dropZone = document.getElementById('dropZone');
 ['dragenter','dragover'].forEach(evt =>
   dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag-over'); })
