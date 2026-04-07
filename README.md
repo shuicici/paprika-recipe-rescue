@@ -52,6 +52,7 @@ npm start
 | GET | `/api/export/all` | Download all recipes as single combined `.paprikarecipes` |
 | POST | `/api/recipes/parse` | Parse uploaded `.paprikarecipes` |
 | POST | `/api/recipes/batch-parse` | Batch-parse multiple `.paprikarecipes` files |
+| POST | `/api/convert/mealmaster` | Convert MealMaster MX2 format → `.paprikarecipes` |
 
 ## CLI
 
